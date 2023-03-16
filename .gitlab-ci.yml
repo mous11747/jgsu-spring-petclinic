@@ -1,0 +1,36 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - build
+  - test
+  - release
+  - deploy
+
+build:
+  stage: build
+  script:
+    - docker build -t $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA .
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+    - docker push $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA
+
+test:
+  stage: test
+  script:
+    - docker run --rm $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA mvn clean verify
+
+release:
+  stage: release
+  script:
+    - docker build -t $DOCKER_REGISTRY/spring-petclinic:latest .
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+    - docker push $DOCKER_REGISTRY/spring-petclinic:latest
+
+deploy:
+  stage: deploy
+  script:
+    - docker pull $DOCKER_REGISTRY/spring-petclinic:latest
+    - docker run --rm -d -p 8080:8080 $DOCKER_REGISTRY/spring-petclinic:latest
+
