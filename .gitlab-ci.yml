@@ -1,38 +1,28 @@
-image: docker:latest
-
-services:
-  - docker:dind
-
 stages:
   - build
   - test
-  - release
   - deploy
 
 build:
   stage: build
+  image: maven:3.6.3-jdk-11
   script:
-    - docker build -t $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA .
-    docker build -t $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA .
-
-    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
-    - docker push $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA
-
-test:
-  stage: test
-  script:
-    - docker run --rm $DOCKER_REGISTRY/spring-petclinic:$CI_COMMIT_SHORT_SHA mvn clean verify
-
-release:
-  stage: release
-  script:
+    - mvn clean package -Dmaven.test.skip=true
     - docker build -t $DOCKER_REGISTRY/spring-petclinic:latest .
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
     - docker push $DOCKER_REGISTRY/spring-petclinic:latest
 
-deploy:
-  stage: deploy
+test:
+  stage: test
+  image: openjdk:11-jre-slim
   script:
     - docker pull $DOCKER_REGISTRY/spring-petclinic:latest
-    - docker run --rm -d -p 8080:8080 $DOCKER_REGISTRY/spring-petclinic:latest
+    - docker run --rm -p 8080:8080 $DOCKER_REGISTRY/spring-petclinic:latest
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - apk add --update curl
+    - curl --request POST --header "Content-Type: application/json" --data '{"content":"Deploying Spring PetClinic..."}' $DISCORD_WEBHOOK_URL
 
