@@ -1,15 +1,16 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:8-jdk-alpine
+FROM openjdk:11-jdk-slim
 
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the application source code into the container
+COPY . .
 
 # Build the application using Maven
-RUN ./mvnw package -DskipTests
+RUN ./mvnw package
 
-# Run the application using the built JAR file
-CMD ["java", "-jar", "target/spring-petclinic-2.4.5.jar"]
+# Set the entrypoint to run the desired commands
+ENTRYPOINT ["sh", "-c", "./mvnw package && java -jar target/*.jar"]
+
 
