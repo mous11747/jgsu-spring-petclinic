@@ -12,6 +12,7 @@ stages:
 build:
   stage: build
   script:
+    - export DOCKER_HOST=tcp://docker:2375
     - docker build -t $DOCKER_REGISTRY/spring-petclinic .
     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD $DOCKER_REGISTRY
     - docker tag spring-petclinic $DOCKER_USERNAME/spring-petclinic
